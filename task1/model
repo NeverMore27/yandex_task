@@ -1,0 +1,59 @@
+
+from random import shuffle as shuffle_func, uniform
+from math import cos, pi, sin
+import numpy as np
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+
+def generate1():
+  a = uniform(0, 1)
+  b = uniform(0, 1)
+  return a * cos(2 * pi * b), a * sin(2 * pi * b)
+
+def generate2():
+    while True:
+        x = uniform(-1, 1)
+        y = uniform(-1, 1)
+        if x ** 2 + y ** 2 > 1:
+            continue
+        return (x, y)
+
+def generate_dataset(n, func):
+    points = []
+    for _ in range(n):
+        point = func()
+        points.append(point)
+    return points
+
+# Генерируем тренировочную выборку
+n = 8000
+points1 = generate_dataset(n, generate1)
+points2 = generate_dataset(n, generate2)
+
+X_train = points1 + points2
+y_train = [0] * n + [1] * n
+
+
+# Генерируем тестовую выборку
+n = 2000
+X_test = generate_dataset(n, generate1) + generate_dataset(n, generate2)
+y_test = [0] * n + [1] * n
+
+
+p = np.random.permutation(len(X_train))
+X_train = [X_train[i] for i in p]
+y_train = [y_train[i] for i in p]
+
+p = np.random.permutation(len(X_test))
+X_test = [X_test[i] for i in p]
+y_test = [y_test[i] for i in p]
+
+model = Sequential()
+model.add(Dense(128, input_dim=2, activation='relu'))
+model.add(Dense(1, activation='sigmoid'))
+model.compile(loss='binary_crossentropy', optimizer='adam')
+model.fit(X_train, y_train, epochs=150, batch_size=32)
+test_loss = model.evaluate(X_test, y_test)
+test_acc = model.metrics[0].result()
+print('Test accuracy:', test_acc)
